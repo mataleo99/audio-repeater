@@ -35,7 +35,17 @@ struct PlaybackControlsView: View {
             }
 
             // Transport controls
-            HStack(spacing: 40) {
+            HStack(spacing: 24) {
+                // Previous segment
+                Button {
+                    viewModel.previousSegment()
+                } label: {
+                    Image(systemName: "backward.end.fill")
+                        .font(.title3)
+                }
+                .disabled(!viewModel.isLoaded || !viewModel.hasSegments)
+
+                // Skip backward
                 Button {
                     viewModel.skipBackward()
                 } label: {
@@ -44,6 +54,7 @@ struct PlaybackControlsView: View {
                 }
                 .disabled(!viewModel.isLoaded)
 
+                // Play/Pause
                 Button {
                     viewModel.togglePlayPause()
                 } label: {
@@ -52,6 +63,7 @@ struct PlaybackControlsView: View {
                 }
                 .disabled(!viewModel.isLoaded)
 
+                // Skip forward
                 Button {
                     viewModel.skipForward()
                 } label: {
@@ -59,6 +71,15 @@ struct PlaybackControlsView: View {
                         .font(.title2)
                 }
                 .disabled(!viewModel.isLoaded)
+
+                // Next segment
+                Button {
+                    viewModel.nextSegment()
+                } label: {
+                    Image(systemName: "forward.end.fill")
+                        .font(.title3)
+                }
+                .disabled(!viewModel.isLoaded || !viewModel.hasSegments)
             }
             .foregroundStyle(.primary)
 

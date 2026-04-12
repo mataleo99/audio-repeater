@@ -19,6 +19,7 @@ final class AudioPlayerService {
     private var audioFile: AVAudioFile?
     private var seekFrame: AVAudioFramePosition = 0
     private var isPlayerReady = false
+    private var scheduleGeneration: Int = 0
     private var timeUpdateTimer: Timer?
 
     init() {
@@ -64,7 +65,11 @@ final class AudioPlayerService {
             }
         }
 
+        scheduleGeneration += 1
+        let generation = scheduleGeneration
+
         playerNode.stop()
+
         let frameCount = AVAudioFrameCount(file.length - seekFrame)
         guard frameCount > 0 else { return }
 
@@ -75,7 +80,7 @@ final class AudioPlayerService {
             at: nil
         ) { [weak self] in
             Task { @MainActor [weak self] in
-                self?.handlePlaybackCompletion()
+                self?.handlePlaybackCompletion(generation: generation)
             }
         }
 
@@ -89,7 +94,8 @@ final class AudioPlayerService {
 
         playerNode.pause()
         stopTimeUpdates()
-        updateCurrentTime()
+        syncSeekFrame()
+        state.currentTime = Double(seekFrame) / (audioFile?.processingFormat.sampleRate ?? 44100)
         state.isPlaying = false
     }
 
@@ -116,7 +122,11 @@ final class AudioPlayerService {
         state.currentTime = time
 
         if state.isPlaying {
+            scheduleGeneration += 1
+            let generation = scheduleGeneration
+
             playerNode.stop()
+
             let frameCount = AVAudioFrameCount(file.length - seekFrame)
             guard frameCount > 0 else { return }
 
@@ -127,7 +137,7 @@ final class AudioPlayerService {
                 at: nil
             ) { [weak self] in
                 Task { @MainActor [weak self] in
-                    self?.handlePlaybackCompletion()
+                    self?.handlePlaybackCompletion(generation: generation)
                 }
             }
             playerNode.play()
@@ -153,9 +163,12 @@ final class AudioPlayerService {
     }
 
     private func updateCurrentTime() {
+        state.currentTime = computeCurrentTime()
+    }
+
+    private func syncSeekFrame() {
         let time = computeCurrentTime()
         seekFrame = AVAudioFramePosition(time * (audioFile?.processingFormat.sampleRate ?? 44100))
-        state.currentTime = time
     }
 
     private func startTimeUpdates() {
@@ -172,7 +185,8 @@ final class AudioPlayerService {
         timeUpdateTimer = nil
     }
 
-    private func handlePlaybackCompletion() {
+    private func handlePlaybackCompletion(generation: Int) {
+        guard generation == scheduleGeneration else { return }
         stopTimeUpdates()
         seekFrame = 0
         state.isPlaying = false

@@ -31,8 +31,9 @@ struct ProjectRowView: View {
                         .background(.secondary.opacity(0.1))
                         .clipShape(Capsule())
 
-                    if project.lastPlaybackPosition > 0 {
-                        Text("\(Int(project.lastPlaybackPosition / project.duration * 100))%")
+                    if project.lastPlaybackPosition > 0 && project.duration > 0 {
+                        let pct = min(100, Int(project.lastPlaybackPosition / project.duration * 100))
+                        Text("\(pct)%")
                             .font(.caption)
                             .foregroundStyle(.tint)
                     }

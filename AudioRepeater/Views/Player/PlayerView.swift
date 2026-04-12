@@ -4,6 +4,7 @@ struct PlayerView: View {
     let project: Project
     @State private var viewModel = PlayerViewModel()
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         VStack(spacing: 0) {
@@ -11,10 +12,6 @@ struct PlayerView: View {
 
             // Title
             VStack(spacing: 8) {
-                Image(systemName: "waveform")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.tint)
-
                 Text(project.title)
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -29,9 +26,38 @@ struct PlayerView: View {
                     .padding(.vertical, 4)
                     .background(.secondary.opacity(0.1))
                     .clipShape(Capsule())
+
+                if viewModel.hasSegments {
+                    Text("\(viewModel.sortedSegments.count) segments")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if viewModel.isSegmenting {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Analyzing audio...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Spacer()
+
+            // Waveform
+            if viewModel.isLoaded {
+                AudioWaveformView(
+                    audioURL: project.audioFileURL,
+                    duration: viewModel.duration,
+                    currentTime: viewModel.currentTime,
+                    segments: viewModel.sortedSegments,
+                    onSeek: { time in
+                        viewModel.seek(to: time)
+                    }
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 16)
+            }
 
             // Playback controls
             PlaybackControlsView(viewModel: viewModel)
@@ -41,7 +67,7 @@ struct PlayerView: View {
         .navigationTitle(project.title)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            viewModel.loadProject(project)
+            viewModel.loadProject(project, modelContainer: modelContext.container)
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background || newPhase == .inactive {

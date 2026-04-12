@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BB000004 /* DSWaveformImage in Frameworks */ = {isa = PBXBuildFile; productRef = BB000002 /* DSWaveformImage */; };
+		BB000005 /* DSWaveformImageViews in Frameworks */ = {isa = PBXBuildFile; productRef = BB000003 /* DSWaveformImageViews */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +31,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB000004 /* DSWaveformImage in Frameworks */,
+				BB000005 /* DSWaveformImageViews in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +75,8 @@
 			);
 			name = AudioRepeater;
 			packageProductDependencies = (
+				BB000002 /* DSWaveformImage */,
+				BB000003 /* DSWaveformImageViews */,
 			);
 			productName = AudioRepeater;
 			productReference = AA000001 /* AudioRepeater.app */;
@@ -101,6 +107,7 @@
 			mainGroup = AA000030 /* Root */;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				BB000001 /* XCRemoteSwiftPackageReference "DSWaveformImage" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA000031 /* Products */;
@@ -347,6 +354,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BB000001 /* XCRemoteSwiftPackageReference "DSWaveformImage" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dmrschmidt/DSWaveformImage";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 14.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BB000002 /* DSWaveformImage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB000001 /* XCRemoteSwiftPackageReference "DSWaveformImage" */;
+			productName = DSWaveformImage;
+		};
+		BB000003 /* DSWaveformImageViews */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB000001 /* XCRemoteSwiftPackageReference "DSWaveformImage" */;
+			productName = DSWaveformImageViews;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA000050 /* Project object */;
 }
