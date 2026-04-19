@@ -1,18 +1,20 @@
 import Foundation
+import os
 import SwiftData
+
+private let logger = Logger(subsystem: "com.audiorepeater.app", category: "SegmentationEngine")
 
 @ModelActor
 actor SegmentationEngine {
-    func segmentProject(projectID: PersistentIdentifier, audioURL: URL, duration: TimeInterval) throws {
+    func segmentProject(projectID: PersistentIdentifier, audioURL: URL, duration: TimeInterval) async throws {
         let detector = SilenceDetector()
         let silenceRegions = try detector.detectSilence(in: audioURL)
+        logger.info("Silence detection found \(silenceRegions.count) regions")
 
         // Convert silence regions to segment boundaries
-        // Segments are the non-silent regions between silence gaps
         var segments: [(start: TimeInterval, end: TimeInterval)] = []
 
         if silenceRegions.isEmpty {
-            // No silence found — treat entire file as one segment
             segments.append((start: 0, end: duration))
         } else {
             // First segment: from file start to first silence
@@ -30,6 +32,9 @@ actor SegmentationEngine {
                 let segDuration = end - start
                 if segDuration >= AppConstants.defaultMinSegmentDuration {
                     segments.append((start: start, end: end))
+                } else if !segments.isEmpty {
+                    // Merge short segment into previous
+                    segments[segments.count - 1] = (start: segments.last!.start, end: silenceRegions[i + 1].start)
                 }
             }
 
@@ -39,9 +44,17 @@ actor SegmentationEngine {
                 let segDuration = duration - start
                 if segDuration >= AppConstants.defaultMinSegmentDuration {
                     segments.append((start: start, end: duration))
+                } else if !segments.isEmpty {
+                    segments[segments.count - 1] = (start: segments.last!.start, end: duration)
                 }
             }
         }
+
+        if segments.isEmpty {
+            segments.append((start: 0, end: duration))
+        }
+
+        logger.info("Created \(segments.count) segments from \(silenceRegions.count) silence regions")
 
         // Delete existing segments for this project
         guard let project = modelContext.model(for: projectID) as? Project else { return }

@@ -66,7 +66,6 @@ struct SilenceDetector {
                 Array(UnsafeBufferPointer(start: ptr, count: floatCount))
             }
 
-            // Mix to mono if stereo
             if channelCount > 1 {
                 let monoCount = floatCount / channelCount
                 var mono = [Float](repeating: 0, count: monoCount)
@@ -124,7 +123,6 @@ struct SilenceDetector {
             windowIndex += hopSize
         }
 
-        // Handle trailing silence
         if let start = silenceStart {
             let startTime = Double(start) / sampleRate
             let endTime = Double(samples.count) / sampleRate

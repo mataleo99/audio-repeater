@@ -10,7 +10,7 @@ struct AudioWaveformView: View {
     let onSeek: (TimeInterval) -> Void
 
     // How many seconds of audio are visible on screen at once
-    private let visibleSeconds: Double = 30.0
+    private let visibleSeconds: Double = 10.0
     private let waveformHeight: CGFloat = 80
 
     var body: some View {

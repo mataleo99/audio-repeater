@@ -4,17 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Run
 
-This is a native iOS SwiftUI app (iOS 18.0+, Swift 6.0). No SPM or CocoaPods dependencies yet.
+This is a native iOS SwiftUI app (iOS 18.0+, Swift 6.0). SPM dependency: DSWaveformImage (waveform rendering).
 
 ```bash
 # Build for simulator (requires iOS simulator runtime installed)
-xcodebuild -project AudioRepeater.xcodeproj -scheme AudioRepeater -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild -project AudioRepeater.xcodeproj -scheme AudioRepeater -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -derivedDataPath /tmp/audio-repeater-build build
 
 # Build for device SDK without code signing (works without simulator runtime)
 xcodebuild -project AudioRepeater.xcodeproj -target AudioRepeater -sdk iphoneos -arch arm64 CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO build
 
 # Run tests (test targets exist but are currently empty)
-xcodebuild -project AudioRepeater.xcodeproj -scheme AudioRepeater -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16' test
+xcodebuild -project AudioRepeater.xcodeproj -scheme AudioRepeater -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -derivedDataPath /tmp/audio-repeater-build test
 ```
 
 Note: Info.plist lives at the project root (not inside `AudioRepeater/`) to avoid conflicts with the file-system-synchronized group auto-including it as a bundle resource.
@@ -67,12 +67,19 @@ Defined in `AppConstants.swift`:
 - Speed range: 0.5x–2.0x
 - Supported formats: mp3, m4a, wav, aac, aiff, caf (audio); srt, vtt (subtitles)
 
+### Audio scheduling and the generation counter
+
+`AudioPlayerService` uses a `scheduleGeneration` counter to prevent stale completion handlers from resetting playback state. Each call to `play()` or `seek()` increments the generation before `playerNode.stop()`. The completion handler captures the generation at schedule time and only runs `handlePlaybackCompletion` if it matches.
+
+### Segment boundary monitoring
+
+`AudioPlayerService.onTimeUpdate` callback fires at 30 FPS. `PlayerViewModel` uses it to detect when playback crosses segment boundaries, triggering auto-pause or repeat cycles based on `RepeatState`.
+
 ## Project Status
 
-Phase 1 (foundation) is implemented: audio import, playback, speed control, library UI. Stub directories exist for future phases:
-- `Services/Segmentation/` — silence detection + speech-based segmentation
+Phases 1-3 implemented: audio import, playback with speed control, library UI, waveform visualization with zoom, silence-based auto-segmentation, repeat/auto-pause state machine, segment marking (heart/star), segment editing (split/merge/delete with boundary dragging), bookmarks with tags, and per-project notes. Stub directories exist for future phases:
 - `Services/Subtitles/` — SRT/VTT parsing, auto-generation
 - `Services/Notifications/` — practice reminders
-- `Views/Segments/`, `Views/Bookmarks/`, `Views/Notes/`, `Views/Settings/`, `Views/Subtitles/` — UI for those features
+- `Views/Settings/`, `Views/Subtitles/` — UI for those features
 
 Info.plist already declares background audio mode, speech recognition permission, and document type handlers for audio + subtitle files.

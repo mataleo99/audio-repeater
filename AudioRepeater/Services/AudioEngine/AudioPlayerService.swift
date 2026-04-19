@@ -13,6 +13,10 @@ struct PlaybackState {
 final class AudioPlayerService {
     private(set) var state = PlaybackState()
 
+    /// Called on each time update tick with the current time. Used by ViewModel
+    /// to monitor for segment boundary crossings.
+    var onTimeUpdate: ((TimeInterval) -> Void)?
+
     private var engine = AVAudioEngine()
     private var playerNode = AVAudioPlayerNode()
     private var timePitch = AVAudioUnitTimePitch()
@@ -164,6 +168,7 @@ final class AudioPlayerService {
 
     private func updateCurrentTime() {
         state.currentTime = computeCurrentTime()
+        onTimeUpdate?(state.currentTime)
     }
 
     private func syncSeekFrame() {
