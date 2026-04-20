@@ -8,6 +8,7 @@ struct PlayerView: View {
     @State private var showSegments = false
     @State private var showBookmarks = false
     @State private var showNotes = false
+    @State private var showSubtitles = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -47,6 +48,24 @@ struct PlayerView: View {
 
             Spacer()
 
+            // Subtitle display
+            if let track = viewModel.primarySubtitleTrack {
+                SubtitleDisplayView(
+                    subtitleTrack: track,
+                    currentTime: viewModel.currentTime
+                )
+                .padding(.bottom, 8)
+            } else if viewModel.isGeneratingSubtitles {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Generating subtitles...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.bottom, 8)
+            }
+
             // Waveform
             if viewModel.isLoaded {
                 AudioWaveformView(
@@ -79,6 +98,22 @@ struct PlayerView: View {
                 .disabled(!viewModel.hasSegments)
 
                 Menu {
+                    // Subtitles section
+                    Button {
+                        showSubtitles = true
+                    } label: {
+                        Label("Subtitles", systemImage: "captions.bubble")
+                    }
+
+                    Button {
+                        viewModel.generateSubtitles(modelContext: modelContext)
+                    } label: {
+                        Label("Auto-Generate Subtitles", systemImage: "waveform.and.mic")
+                    }
+                    .disabled(!viewModel.isLoaded || viewModel.isGeneratingSubtitles)
+
+                    Divider()
+
                     Button {
                         showBookmarks = true
                     } label: {
@@ -179,6 +214,25 @@ struct PlayerView: View {
                     }
             }
             .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showSubtitles) {
+            NavigationStack {
+                SubtitleTrackListView(project: project)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showSubtitles = false }
+                        }
+                    }
+            }
+            .presentationDetents([.medium, .large])
+        }
+        .alert("Subtitle Generation Failed", isPresented: Binding(
+            get: { viewModel.subtitleError != nil },
+            set: { if !$0 { viewModel.subtitleError = nil } }
+        )) {
+            Button("OK") { viewModel.subtitleError = nil }
+        } message: {
+            Text(viewModel.subtitleError ?? "")
         }
         .onAppear {
             viewModel.loadProject(project, modelContainer: modelContext.container)
