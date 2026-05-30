@@ -60,6 +60,8 @@ final class AudioPlayerService {
     func play() {
         guard isPlayerReady, let file = audioFile else { return }
 
+        AudioSessionManager.shared.configure()
+
         if !engine.isRunning {
             do {
                 try engine.start()

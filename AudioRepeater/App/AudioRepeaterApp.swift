@@ -28,11 +28,13 @@ struct AudioRepeaterApp: App {
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
+
+        AudioSessionManager.shared.configure()
     }
 
     var body: some Scene {
         WindowGroup {
-            LibraryView()
+            RootView()
         }
         .modelContainer(modelContainer)
     }

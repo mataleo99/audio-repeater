@@ -9,6 +9,7 @@ struct LibraryView: View {
     @State private var selectedProject: Project?
     @State private var importError: String?
     @State private var showError = false
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -21,12 +22,29 @@ struct LibraryView: View {
             }
             .navigationTitle("Library")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showFileImporter = true
                     } label: {
                         Image(systemName: "plus")
                     }
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                NavigationStack {
+                    SettingsView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Done") { showSettings = false }
+                            }
+                        }
                 }
             }
             .fileImporter(

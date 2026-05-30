@@ -97,8 +97,44 @@ final class PlayerViewModel {
             self?.onTimeUpdate(time)
         }
 
+        registerNowPlayingHandlers()
+        updateNowPlaying()
+
         // Always run segmentation on load to pick up latest settings
         runSegmentation(for: project, modelContainer: modelContainer)
+    }
+
+    // MARK: - Now Playing
+
+    private func registerNowPlayingHandlers() {
+        NowPlayingService.shared.register(handlers: NowPlayingCommandHandlers(
+            togglePlayPause: { [weak self] in self?.togglePlayPause() },
+            play: { [weak self] in if self?.isPlaying == false { self?.togglePlayPause() } },
+            pause: { [weak self] in if self?.isPlaying == true { self?.togglePlayPause() } },
+            nextTrack: { [weak self] in self?.nextSegment() },
+            previousTrack: { [weak self] in self?.previousSegment() },
+            skipForward: { [weak self] interval in self?.skip(by: interval) },
+            skipBackward: { [weak self] interval in self?.skip(by: -interval) },
+            seek: { [weak self] time in self?.seek(to: time) }
+        ))
+    }
+
+    private func updateNowPlaying() {
+        guard let project = currentProject else {
+            NowPlayingService.shared.clear()
+            return
+        }
+        NowPlayingService.shared.update(
+            title: project.title,
+            duration: duration,
+            elapsed: currentTime,
+            isPlaying: isPlaying,
+            rate: speed
+        )
+    }
+
+    func skip(by interval: TimeInterval) {
+        seek(to: max(0, min(duration, currentTime + interval)))
     }
 
     func runSegmentation(for project: Project, modelContainer: ModelContainer) {
@@ -173,9 +209,11 @@ final class PlayerViewModel {
             let segment = segs[segmentIndex]
             watchingSegmentIndex = segmentIndex
             audioService.seek(to: segment.startTime)
+            updateNowPlaying()
         } else if isPhraseMode {
             // Phrase mode: pause at end, wait for user to tap "Play Next Phrase"
             audioService.pause()
+            updateNowPlaying()
         } else if isAutoPauseEnabled {
             // Auto-pause: pause briefly, then continue
             let nextIdx = segmentIndex + 1
@@ -183,6 +221,7 @@ final class PlayerViewModel {
                 watchingSegmentIndex = nextIdx
             }
             startAutoPause()
+            updateNowPlaying()
         }
     }
 
@@ -214,6 +253,7 @@ final class PlayerViewModel {
     func togglePlayPause() {
         if isAutoPaused {
             endAutoPause()
+            updateNowPlaying()
             return
         }
 
@@ -224,6 +264,7 @@ final class PlayerViewModel {
             isPhraseMode = false
             audioService.play()
         }
+        updateNowPlaying()
     }
 
     func toggleLoop() {
@@ -285,11 +326,13 @@ final class PlayerViewModel {
         audioService.seek(to: time)
         let segs = sortedSegments
         watchingSegmentIndex = segs.firstIndex(where: { time >= $0.startTime && time < $0.endTime })
+        updateNowPlaying()
     }
 
     func setSpeed(_ speed: Float) {
         currentProject?.playbackSpeed = speed
         audioService.setSpeed(speed)
+        updateNowPlaying()
     }
 
     func setAutoPauseDuration(_ duration: TimeInterval) {
